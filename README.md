@@ -5,6 +5,199 @@
 
 ---
 
+## 快速配置指南（5 步上手）
+
+### Step 1：复制文件到你的项目
+
+```bash
+# 在你的项目根目录下执行：
+
+# 方式 A：整套复制（推荐首次使用）
+cp /path/to/dev-skill-repo/AGENTS.md ./AGENTS.md
+cp -r /path/to/dev-skill-repo/.agents ./.agents
+
+# 方式 B：只复制你需要的 Skill
+mkdir -p .agents/skills
+cp /path/to/dev-skill-repo/AGENTS.md ./AGENTS.md
+cp -r /path/to/dev-skill-repo/.agents/skills/git-safety ./.agents/skills/
+cp -r /path/to/dev-skill-repo/.agents/skills/three-strike-fix ./.agents/skills/
+# ...按需添加更多
+```
+
+复制完成后，你的项目结构应该是：
+
+```
+your-project/
+├── AGENTS.md                    ← 工程宪法（Agent 会自动读取）
+├── .agents/
+│   └── skills/
+│       ├── acceptance-matrix/SKILL.md
+│       ├── change-classification/SKILL.md
+│       └── ... (你选择的 Skill)
+├── docs/                        ← 下一步创建
+│   ├── DEVELOPMENT_ROADMAP.md
+│   ├── PROJECT_STATE.md
+│   └── CURRENT_TASK.md
+└── (你的项目源码...)
+```
+
+### Step 2：创建三份活动文档
+
+这三份文档是 Agent 跨会话的唯一状态来源，必须在你项目的 `docs/` 目录下创建。
+
+**① `docs/DEVELOPMENT_ROADMAP.md`（规划入口）**
+
+```markdown
+# Development Roadmap
+
+## 项目简介
+[你的项目是做什么的，一两句话]
+
+## 技术栈
+[语言、框架、构建工具、关键依赖]
+
+## 模块规划
+| 优先级 | 模块 | 状态 | 说明 |
+|--------|------|------|------|
+| P0 | 核心功能 | 进行中 | ... |
+| P1 | 次要功能 | 待开始 | ... |
+
+## 关键决策记录
+| 日期 | 决策 | 原因 |
+|------|------|------|
+| YYYY-MM-DD | 选择了 X 而非 Y | 因为 Z |
+```
+
+**② `docs/PROJECT_STATE.md`（状态入口）**
+
+```markdown
+# Project State
+
+## 当前门禁
+`IN_PROGRESS` / `ARCHITECTURE_REVIEW` / `PASS` / `BLOCKED`
+
+## 当前已验证快照
+- 构建状态：✅ 通过 / ❌ 失败
+- 单元测试：X/Y 通过
+- 目标设备验证：未开始 / 模拟器 / 真机
+
+## 未解决风险
+| 风险 | 影响 | 当前状态 |
+|------|------|----------|
+| ... | ... | ... |
+
+## 下一步允许执行的动作
+- [ ] 具体可以做的下一件事
+```
+
+**③ `docs/CURRENT_TASK.md`（任务入口）**
+
+```markdown
+# Current Task
+
+## 任务 ID
+TASK-YYYYMMDD-001
+
+## 任务目标
+[这个任务要完成什么]
+
+## 验收矩阵
+
+### 主链路
+[用户真正需要完成的一条端到端路径]
+
+### 必须证据
+| 证据类型 | 具体内容 | 状态 |
+|----------|---------|------|
+| 单元测试 | ... | 待获取 |
+| 截图 | ... | 待获取 |
+| 设备验证 | ... | 待获取 |
+
+### 禁止事项
+- 不得修改：[列出不能动的模块]
+- 不得使用：[列出不能用的 Demo/fallback]
+
+### 退出状态
+[全部满足才能标记 PASS 的具体条件]
+
+### 未完成状态
+[证据缺失时使用什么状态：PARTIAL_PASS / BLOCKED / HUMAN_DECISION]
+
+## 进度记录
+| 时间 | 动作 | 结果 |
+|------|------|------|
+| ... | ... | ... |
+```
+
+### Step 3：根据你的项目定制 AGENTS.md
+
+AGENTS.md 是通用的，但有几个地方需要你按项目实际情况修改：
+
+| 需要定制的内容 | 在 AGENTS.md 中的位置 | 改成什么 |
+|---------------|---------------------|----------|
+| 回归验证命令 | §9.6 验证与证据等级 | 改成你项目的测试命令（如 `npm test`、`pytest`、`go test ./...`） |
+| 证据等级定义 | §9.6 | 按你的项目调整（Web 项目可能没有 DEVICE_VERIFIED，改为 PRODUCTION_VERIFIED） |
+| 真机/生产操作授权 | §0 | 改成你的部署环境描述 |
+| 活动文档路径 | §6 | 如果你的文档不在 `docs/` 下，改成实际路径 |
+
+**示例：Web 项目的证据等级调整**
+
+```markdown
+# 原文（移动端）：
+BUILD_VERIFIED < COMPONENT_VERIFIED < SIMULATOR_VERIFIED < DEVICE_VERIFIED
+
+# 改为（Web 项目）：
+BUILD_VERIFIED < COMPONENT_VERIFIED < STAGING_VERIFIED < PRODUCTION_VERIFIED
+```
+
+### Step 4：配置 AI Agent 读取规范
+
+根据你使用的 AI 工具，配置方式不同：
+
+**Cursor / Qoder（推荐）**
+
+AGENTS.md 放在项目根目录后，Agent 会自动读取。Skill 文件在 `.agents/skills/` 下也会被自动发现。无需额外配置。
+
+**Codex / ChatGPT Codex**
+
+在项目根目录放置 AGENTS.md 即可，Codex 启动时会自动加载。
+
+**其他 AI 编码工具**
+
+如果工具不支持自动读取 AGENTS.md，将以下内容注入到系统提示（System Prompt）中：
+
+```
+你是一个严格遵循工程宪法的开发助手。
+开始任何工作前，先读取并遵守 AGENTS.md 中的所有规则。
+遇到具体场景时，读取对应的 .agents/skills/<skill-name>/SKILL.md 获取详细指导。
+每次修改代码前，确认验收矩阵已冻结。
+每次提交前，检查 Git 安全规则。
+遇到不确定的决策，检查人工决策边界。
+```
+
+### Step 5：开始使用
+
+配置完成后，给 Agent 下达任务时只需正常描述需求，Agent 会自动：
+
+```
+你：「帮我修复这个 Bug：用户点击导出后没反应」
+
+Agent 内部自动执行的流程：
+  │
+  ├── 1. 读取 AGENTS.md → 知道所有规矩
+  ├── 2. 判断任务类型 → Bug 修复 → 加载 three-strike-fix Skill
+  ├── 3. 判断变更级别 → S1（边界清楚的 Bug）
+  ├── 4. 写验收矩阵 → 记录到 CURRENT_TASK.md
+  ├── 5. 建立 checkpoint commit → 按 git-safety 执行
+  ├── 6. 开始修复 → 第一次尝试 → 装机验证
+  ├── 7. 如果 3 次没修好 → 自动转入根因分析
+  └── 8. 修好后 → 更新三份文档 → 输出最终汇报
+```
+
+你不需要手动告诉 Agent "用哪个 Skill"，它会根据场景自动匹配。
+
+---
+
 ## 这是什么
 
 本项目包含两部分：
